@@ -1,3 +1,4 @@
+<!-- BikeEditor.svelte (updated) -->
 <script lang="ts">
 	import { onMount } from 'svelte';
 	import BikeForm from '$lib/components/BikeForm.svelte';
@@ -95,7 +96,6 @@
 		<div class="comparison-grid">
 			<!-- First bike form (always visible) -->
 			<div class="bike-column bike-0">
-				<h2>Bike 1</h2>
 				<BikeForm
 					parameters={bikesParameters[0]}
 					bind:this={bikeFormComponents[0]}
@@ -108,7 +108,6 @@
 			<!-- Second bike form (conditionally visible) -->
 			{#if showSecondBike}
 				<div class="bike-column bike-1">
-					<h2>Bike 2</h2>
 					<BikeForm
 						parameters={bikesParameters[1]}
 						bind:this={bikeFormComponents[1]}
@@ -119,7 +118,6 @@
 				</div>
 			{:else}
 				<div class="bike-column bike-1 disabled">
-					<h2>Bike 2 (Hidden)</h2>
 					<p class="disabled-message">Second bike is currently hidden</p>
 				</div>
 			{/if}
@@ -194,12 +192,6 @@
 		text-align: center;
 	}
 
-	h2 {
-		margin-top: 0;
-		text-align: center;
-		margin-bottom: 1rem;
-	}
-
 	.controls {
 		display: flex;
 		flex-wrap: wrap;
@@ -238,7 +230,7 @@
 	.bike-column {
 		padding: 1rem;
 		border-radius: 8px;
-		background-color: #f9f9f9;
+		/* background-color: #f9f9f9; */
 	}
 
 	.bike-column.disabled {
