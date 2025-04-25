@@ -11,11 +11,8 @@
 		{ ...defaultBikeParameters2 }
 	];
 
-	// Track which bike is currently being displayed (in single view mode)
-	let activeBikeIndex = 0;
-
-	// Track comparison mode
-	let comparisonMode = false;
+	// Track whether second bike is visible
+	let showSecondBike = true;
 
 	// References to form components for updating total measurements
 	let bikeFormComponents: BikeForm[] = [];
@@ -46,20 +43,16 @@
 		totalStacks[index] = event.detail.stack;
 	}
 
-	// Toggle between single and comparison mode
-	function toggleComparisonMode() {
-		comparisonMode = !comparisonMode;
-	}
-
-	// Set the active bike in single view mode
-	function setActiveBike(index: number) {
-		activeBikeIndex = index;
+	// Toggle the visibility of the second bike
+	function toggleSecondBike() {
+		showSecondBike = !showSecondBike;
 	}
 
 	// Save parameters to localStorage when they change
 	$: {
 		if (typeof window !== 'undefined') {
 			localStorage.setItem('bikesParameters', JSON.stringify(bikesParameters));
+			localStorage.setItem('showSecondBike', JSON.stringify(showSecondBike));
 		}
 	}
 
@@ -74,6 +67,15 @@
 				bikesParameters = [{ ...defaultBikeParameters }, { ...defaultBikeParameters2 }];
 			}
 		}
+
+		const savedShowSecondBike = localStorage.getItem('showSecondBike');
+		if (savedShowSecondBike) {
+			try {
+				showSecondBike = JSON.parse(savedShowSecondBike);
+			} catch (e) {
+				console.error('Failed to parse saved showSecondBike state:', e);
+			}
+		}
 	});
 </script>
 
@@ -81,57 +83,61 @@
 	<h1>Bike Geometry Editor</h1>
 
 	<div class="controls">
-		<!-- Toggle comparison mode -->
-		<button class="toggle-btn" on:click={toggleComparisonMode}>
-			{comparisonMode ? 'Single View Mode' : 'Comparison Mode'}
+		<!-- Toggle for second bike visibility -->
+		<button class="toggle-btn" on:click={toggleSecondBike}>
+			{showSecondBike ? 'Hide Second Bike' : 'Show Second Bike'}
 		</button>
-
-		<!-- Bike selection tabs in single view mode -->
-		{#if !comparisonMode}
-			<div class="bike-tabs">
-				{#each bikesParameters as _, index (index)}
-					<button
-						class="tab-btn {activeBikeIndex === index ? 'active' : ''}"
-						on:click={() => setActiveBike(index)}
-					>
-						Bike {index + 1}
-					</button>
-				{/each}
-			</div>
-		{/if}
 	</div>
 
-	<!-- Comparison mode layout -->
-	{#if comparisonMode}
-		<div class="editor-layout comparison-mode">
-			<!-- Side-by-side forms -->
-			<div class="comparison-grid">
-				{#each bikesParameters as parameters, index (index)}
-					<div class="bike-column bike-{index}">
-						<h2>Bike {index + 1}</h2>
-						<BikeForm
-							{parameters}
-							bind:this={bikeFormComponents[index]}
-							on:change={(event) => handleParametersChange(event, index)}
-							on:requestTotalMeasurements={() => handleTotalMeasurementsRequest(index)}
-							bikeIndex={index}
-						/>
-					</div>
-				{/each}
+	<!-- Always use comparison layout -->
+	<div class="editor-layout comparison-mode">
+		<!-- Side-by-side forms -->
+		<div class="comparison-grid">
+			<!-- First bike form (always visible) -->
+			<div class="bike-column bike-0">
+				<h2>Bike 1</h2>
+				<BikeForm
+					parameters={bikesParameters[0]}
+					bind:this={bikeFormComponents[0]}
+					on:change={(event) => handleParametersChange(event, 0)}
+					on:requestTotalMeasurements={() => handleTotalMeasurementsRequest(0)}
+					bikeIndex={0}
+				/>
 			</div>
 
-			<!-- Combined visualization - using divs with positioned SVGs -->
-			<div class="visualization-section">
-				<!-- Main visualization wrapper -->
-				<div class="visualizations-container">
-					<!-- Main SVG container -->
-					<BikeVisualization
-						parameters={bikesParameters[0]}
-						on:totalMeasurementsUpdate={(event) => handleTotalMeasurementsUpdate(event, 0)}
-						bikeIndex={0}
+			<!-- Second bike form (conditionally visible) -->
+			{#if showSecondBike}
+				<div class="bike-column bike-1">
+					<h2>Bike 2</h2>
+					<BikeForm
+						parameters={bikesParameters[1]}
+						bind:this={bikeFormComponents[1]}
+						on:change={(event) => handleParametersChange(event, 1)}
+						on:requestTotalMeasurements={() => handleTotalMeasurementsRequest(1)}
+						bikeIndex={1}
 					/>
+				</div>
+			{:else}
+				<div class="bike-column bike-1 disabled">
+					<h2>Bike 2 (Hidden)</h2>
+					<p class="disabled-message">Second bike is currently hidden</p>
+				</div>
+			{/if}
+		</div>
 
-					<!-- SVG overlay div -->
+		<!-- Combined visualization - using divs with positioned SVGs -->
+		<div class="visualization-section">
+			<!-- Main visualization wrapper -->
+			<div class="visualizations-container">
+				<!-- Main SVG container -->
+				<BikeVisualization
+					parameters={bikesParameters[0]}
+					on:totalMeasurementsUpdate={(event) => handleTotalMeasurementsUpdate(event, 0)}
+					bikeIndex={0}
+				/>
+
+				<!-- SVG overlay div (conditionally rendered) -->
+				{#if showSecondBike}
 					<div class="bike-overlay">
 						<BikeVisualization
 							parameters={bikesParameters[1]}
@@ -140,56 +146,40 @@
 							isOverlay={true}
 						/>
 					</div>
-				</div>
+				{/if}
+			</div>
 
-				<!-- Comparison info table -->
-				<div class="comparison-info">
-					<div class="comparison-table">
-						<div class="info-row header">
-							<div class="info-cell"></div>
-							<div class="info-cell bike-0">Bike 1</div>
+			<!-- Comparison info table -->
+			<div class="comparison-info">
+				<div class="comparison-table">
+					<div class="info-row header">
+						<div class="info-cell"></div>
+						<div class="info-cell bike-0">Bike 1</div>
+						{#if showSecondBike}
 							<div class="info-cell bike-1">Bike 2</div>
 							<div class="info-cell">Difference</div>
-						</div>
-						<div class="info-row">
-							<div class="info-cell">Total Reach</div>
-							<div class="info-cell bike-0">{totalReaches[0]} mm</div>
+						{/if}
+					</div>
+					<div class="info-row">
+						<div class="info-cell">Total Reach</div>
+						<div class="info-cell bike-0">{totalReaches[0]} mm</div>
+						{#if showSecondBike}
 							<div class="info-cell bike-1">{totalReaches[1]} mm</div>
 							<div class="info-cell">{totalReaches[1] - totalReaches[0]} mm</div>
-						</div>
-						<div class="info-row">
-							<div class="info-cell">Total Stack</div>
-							<div class="info-cell bike-0">{totalStacks[0]} mm</div>
+						{/if}
+					</div>
+					<div class="info-row">
+						<div class="info-cell">Total Stack</div>
+						<div class="info-cell bike-0">{totalStacks[0]} mm</div>
+						{#if showSecondBike}
 							<div class="info-cell bike-1">{totalStacks[1]} mm</div>
 							<div class="info-cell">{totalStacks[1] - totalStacks[0]} mm</div>
-						</div>
+						{/if}
 					</div>
 				</div>
 			</div>
 		</div>
-	{:else}
-		<!-- Single bike mode -->
-		<div class="editor-layout">
-			<div class="form-section">
-				<BikeForm
-					parameters={bikesParameters[activeBikeIndex]}
-					bind:this={bikeFormComponents[activeBikeIndex]}
-					on:change={(event) => handleParametersChange(event, activeBikeIndex)}
-					on:requestTotalMeasurements={() => handleTotalMeasurementsRequest(activeBikeIndex)}
-					bikeIndex={activeBikeIndex}
-				/>
-			</div>
-
-			<div class="visualization-section bike-{activeBikeIndex}">
-				<BikeVisualization
-					parameters={bikesParameters[activeBikeIndex]}
-					on:totalMeasurementsUpdate={(event) =>
-						handleTotalMeasurementsUpdate(event, activeBikeIndex)}
-					bikeIndex={activeBikeIndex}
-				/>
-			</div>
-		</div>
-	{/if}
+	</div>
 </div>
 
 <style>
@@ -219,37 +209,18 @@
 		margin-bottom: 1.5rem;
 	}
 
-	.bike-tabs {
-		display: flex;
-		gap: 0.5rem;
-	}
-
-	.toggle-btn,
-	.tab-btn {
+	.toggle-btn {
 		padding: 0.5rem 1rem;
 		border-radius: 4px;
 		border: none;
 		cursor: pointer;
 		font-weight: 500;
-	}
-
-	.toggle-btn {
 		background-color: #23d160;
 		color: white;
 	}
 
 	.toggle-btn:hover {
 		background-color: #20bc56;
-	}
-
-	.tab-btn {
-		background-color: #f5f5f5;
-		border: 1px solid #ddd;
-	}
-
-	.tab-btn.active {
-		background-color: #3273dc;
-		color: white;
 	}
 
 	.editor-layout {
@@ -268,6 +239,18 @@
 		padding: 1rem;
 		border-radius: 8px;
 		background-color: #f9f9f9;
+	}
+
+	.bike-column.disabled {
+		opacity: 0.5;
+		background-color: #e5e5e5;
+	}
+
+	.disabled-message {
+		text-align: center;
+		font-style: italic;
+		color: #666;
+		padding: 2rem 0;
 	}
 
 	.visualization-section {
@@ -299,13 +282,17 @@
 
 	.info-row {
 		display: grid;
-		grid-template-columns: 1fr 1fr 1fr 1fr;
-		border-bottom: 1px solid #ddd;
+		grid-template-columns: 1fr 1fr;
 	}
 
 	.info-row.header {
 		font-weight: bold;
 		border-bottom: 2px solid #ccc;
+	}
+
+	/* Adjust info-row grid when second bike is visible */
+	:global(.bike-editor:has(.bike-overlay)) .info-row {
+		grid-template-columns: 1fr 1fr 1fr 1fr;
 	}
 
 	.info-cell {
@@ -330,6 +317,18 @@
 	@media (max-width: 767px) {
 		.comparison-grid {
 			grid-template-columns: 1fr;
+		}
+
+		/* Fix table columns for smaller screens */
+		.info-row,
+		:global(.bike-editor:has(.bike-overlay)) .info-row {
+			grid-template-columns: 1fr 1fr;
+		}
+
+		/* Stack the comparison cells in mobile view when second bike is shown */
+		:global(.bike-editor:has(.bike-overlay)) .info-row {
+			border-bottom: 1px solid #ddd;
+			margin-bottom: 0.5rem;
 		}
 	}
 </style>

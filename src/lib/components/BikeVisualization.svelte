@@ -118,36 +118,31 @@
 </script>
 
 <div class="visualization-container {isOverlay ? 'overlay' : ''}">
-	{#if !isOverlay}
-		<h3>Bike {bikeIndex + 1} Visualization</h3>
-	{/if}
-
 	<svg
 		width={canvasWidth}
 		height={canvasHeight}
 		viewBox="0 0 {canvasWidth} {canvasHeight}"
 		preserveAspectRatio="xMidYMid meet"
 	>
-		<!-- Only render wheels if not in overlay mode -->
-		{#if !isOverlay}
-			<!-- Wheels -->
-			<circle
-				cx={rearAxle.x}
-				cy={rearAxle.y}
-				r={wheelRadius * scaleFactor}
-				fill="none"
-				stroke="#666"
-				stroke-width="2"
-			/>
-			<circle
-				cx={frontAxle.x}
-				cy={frontAxle.y}
-				r={wheelRadius * scaleFactor}
-				fill="none"
-				stroke="#666"
-				stroke-width="2"
-			/>
-		{/if}
+		<!-- Wheels -->
+		<circle
+			cx={rearAxle.x}
+			cy={rearAxle.y}
+			r={wheelRadius * scaleFactor}
+			fill="none"
+			stroke={strokeColor}
+			stroke-width={strokeWidth}
+			stroke-opacity={strokeOpacity}
+		/>
+		<circle
+			cx={frontAxle.x}
+			cy={frontAxle.y}
+			r={wheelRadius * scaleFactor}
+			fill="none"
+			stroke={strokeColor}
+			stroke-width={strokeWidth}
+			stroke-opacity={strokeOpacity}
+		/>
 
 		<!-- Frame -->
 		<!-- Chain stay (rear axle to bottom bracket) -->
@@ -377,13 +372,7 @@
 	.visualization-container.overlay svg {
 		background-color: transparent;
 		border: none;
-		padding-top: 55px;
-	}
-
-	h3 {
-		margin-top: 0;
-		margin-bottom: 1rem;
-		color: var(--bike-color, #333);
+		padding-top: 17px;
 	}
 
 	/* Define bike colors using CSS custom properties */

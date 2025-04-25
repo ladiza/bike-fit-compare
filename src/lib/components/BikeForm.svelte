@@ -28,7 +28,11 @@
 	function handleFileUpload() {
 		if (fileInput && fileInput.files && fileInput.files.length > 0) {
 			const file = fileInput.files[0];
-			uploadedFileName = file.name.replace(/\.json$/, '');
+			// Update the filename input with the uploaded file name (without extension)
+			fileName = file.name.replace(/\.json$/, '');
+			// Keep track of the file name, but we no longer need to display it separately
+			uploadedFileName = file.name;
+
 			const reader = new FileReader();
 
 			reader.onload = (e) => {
@@ -371,36 +375,39 @@
 	</div>
 
 	<div class="export-container">
-		<!-- File upload -->
-		<div class="file-upload-container">
-			<input
-				type="file"
-				accept=".json"
-				style="display: none;"
-				bind:this={fileInput}
-				on:change={handleFileUpload}
-			/>
-			<button on:click={() => fileInput.click()} class="upload-button bike-{bikeIndex}-btn">
-				Upload Bike {bikeIndex + 1}
-			</button>
-			<span class="file-name">{uploadedFileName}</span>
-		</div>
+		<!-- Hidden file input -->
+		<input
+			type="file"
+			accept=".json"
+			style="display: none;"
+			bind:this={fileInput}
+			on:change={handleFileUpload}
+		/>
 
-		<!-- File export -->
+		<!-- Filename input field -->
 		<div class="filename-input-container">
 			<label for="filename-{bikeIndex}">Filename:</label>
-			<input
-				type="text"
-				id="filename-{bikeIndex}"
-				bind:value={fileName}
-				placeholder="bike-parameters"
-				class="filename-input"
-			/>
-			<span class="file-extension">.json</span>
+			<div class="input-with-extension">
+				<input
+					type="text"
+					id="filename-{bikeIndex}"
+					bind:value={fileName}
+					placeholder="bike-parameters"
+					class="filename-input"
+				/>
+				<span class="file-extension">.json</span>
+			</div>
 		</div>
-		<button on:click={exportParameters} class="export-button bike-{bikeIndex}-btn">
-			Export Bike {bikeIndex + 1}
-		</button>
+
+		<!-- Buttons container for side-by-side layout -->
+		<div class="buttons-container">
+			<button on:click={() => fileInput.click()} class="action-button bike-{bikeIndex}-btn">
+				Upload
+			</button>
+			<button on:click={exportParameters} class="action-button bike-{bikeIndex}-btn">
+				Export
+			</button>
+		</div>
 	</div>
 </div>
 
@@ -605,6 +612,107 @@
 
 		.number-input {
 			width: 65px;
+		}
+	}
+
+	.export-container {
+		margin-top: 1.5rem;
+		display: flex;
+		flex-direction: column;
+		align-items: center;
+		gap: 0.8rem;
+	}
+
+	.filename-input-container {
+		display: flex;
+		flex-direction: column;
+		align-items: center;
+		gap: 0.4rem;
+		width: 100%;
+	}
+
+	.input-with-extension {
+		display: flex;
+		align-items: center;
+		width: 100%;
+		max-width: 300px;
+	}
+
+	.filename-input {
+		flex: 1;
+		padding: 0.5rem 0.6rem;
+		border: 1px solid #ccc;
+		border-radius: 4px 0 0 4px;
+		font-size: 0.9rem;
+	}
+
+	.file-extension {
+		padding: 0.5rem 0.6rem;
+		background-color: #f0f0f0;
+		border: 1px solid #ccc;
+		border-left: none;
+		border-radius: 0 4px 4px 0;
+		color: #666;
+		font-size: 0.9rem;
+	}
+
+	.buttons-container {
+		display: flex;
+		gap: 1rem;
+		justify-content: center;
+		width: 100%;
+		margin-top: 0.5rem;
+	}
+
+	.action-button {
+		border: none;
+		border-radius: 4px;
+		padding: 0.6rem 1.5rem;
+		font-size: 1rem;
+		font-weight: 500;
+		cursor: pointer;
+		transition:
+			background-color 0.2s,
+			transform 0.1s;
+		color: white;
+		min-width: 120px;
+		text-align: center;
+	}
+
+	.action-button:hover {
+		transform: translateY(-2px);
+	}
+
+	.action-button:active {
+		transform: translateY(0);
+	}
+
+	.bike-0-btn {
+		background-color: #3273dc;
+	}
+
+	.bike-0-btn:hover {
+		background-color: #2366d1;
+	}
+
+	.bike-1-btn {
+		background-color: #ff3860;
+	}
+
+	.bike-1-btn:hover {
+		background-color: #ee2d54;
+	}
+
+	@media (max-width: 576px) {
+		.buttons-container {
+			flex-direction: column;
+			gap: 0.5rem;
+			align-items: center;
+		}
+
+		.action-button {
+			width: 100%;
+			max-width: 300px;
 		}
 	}
 </style>
