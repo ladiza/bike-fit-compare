@@ -335,18 +335,6 @@
 			</text>
 		{/if}
 	</svg>
-
-	<!-- Only show info if not in overlay -->
-	{#if !isOverlay}
-		<div class="info">
-			<p>
-				Total reach: {Math.round(Math.abs(handlebarReach.x - bottomBracket.x) / scaleFactor)} mm
-			</p>
-			<p>
-				Total stack: {Math.round(Math.abs(handlebarReach.y - bottomBracket.y) / scaleFactor)} mm
-			</p>
-		</div>
-	{/if}
 </div>
 
 <style>

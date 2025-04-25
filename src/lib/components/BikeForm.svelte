@@ -1,5 +1,5 @@
 <script lang="ts">
-	import { createEventDispatcher, onMount } from 'svelte';
+	import { createEventDispatcher } from 'svelte';
 	import type { BikeParameters } from '$lib/types';
 	import { defaultBikeParameters } from '$lib/types';
 
@@ -24,6 +24,41 @@
 		dispatch('change', parameters);
 	}
 
+	/**
+	 * Extracts only the editable parameters from the full bike parameters object
+	 * These are the parameters that have UI controls in the form
+	 */
+	function getEditableParameters(params: BikeParameters) {
+		return {
+			headTubeAngle: params.headTubeAngle,
+			stack: params.stack,
+			reach: params.reach,
+			spacersLength: params.spacersLength,
+			stemLength: params.stemLength,
+			stemAngle: params.stemAngle,
+			handlebarReach: params.handlebarReach,
+			handlebarRaise: params.handlebarRaise
+		};
+	}
+
+	/**
+	 * Validates that a parameter object contains all required editable parameters
+	 */
+	function isValidEditableParameters(params: any): boolean {
+		const requiredKeys = [
+			'headTubeAngle',
+			'stack',
+			'reach',
+			'spacersLength',
+			'stemLength',
+			'stemAngle',
+			'handlebarReach',
+			'handlebarRaise'
+		];
+
+		return requiredKeys.every((key) => key in params && typeof params[key] === 'number');
+	}
+
 	// Handle file upload
 	function handleFileUpload() {
 		if (fileInput && fileInput.files && fileInput.files.length > 0) {
@@ -38,14 +73,18 @@
 			reader.onload = (e) => {
 				try {
 					const uploadedParams = JSON.parse(e.target.result as string);
+
 					// Validate the uploaded JSON structure
-					if (isValidBikeParameters(uploadedParams)) {
-						// Update our parameters
-						Object.assign(parameters, uploadedParams);
+					if (isValidEditableParameters(uploadedParams)) {
+						// Only apply the editable parameters to our bike model
+						Object.keys(getEditableParameters(uploadedParams)).forEach((key) => {
+							parameters[key] = uploadedParams[key];
+						});
+
 						// Notify parent about change
 						dispatch('change', parameters);
 					} else {
-						alert('Invalid bike parameters format');
+						alert('Invalid bike parameters format - missing required editable parameters');
 					}
 				} catch (error) {
 					console.error('Failed to parse uploaded file:', error);
@@ -58,23 +97,8 @@
 	}
 
 	function isValidBikeParameters(params: any): params is BikeParameters {
-		const requiredKeys = [
-			'headTubeAngle',
-			'seatTubeAngle',
-			'seatTubeLength',
-			'chainStayLength',
-			'bottomBracketDrop',
-			'stack',
-			'reach',
-			'wheelDiameter',
-			'spacersLength',
-			'stemLength',
-			'stemAngle',
-			'handlebarReach',
-			'handlebarRaise'
-		];
-
-		return requiredKeys.every((key) => key in params && typeof params[key] === 'number');
+		// We only need to validate the editable parameters now
+		return isValidEditableParameters(params);
 	}
 
 	// Variables to hold the total measurements
@@ -85,13 +109,17 @@
 		totalStack = stack;
 	}
 
+	/**
+	 * Replace the existing exportParameters function with this version
+	 * that only exports the editable parameters plus calculated values
+	 */
 	function exportParameters() {
 		// First, request the latest total measurements from BikeVisualization
 		dispatch('requestTotalMeasurements');
 
-		// Create full parameters object with the calculated values
+		// Create export data with only editable parameters plus calculated values
 		const exportData = {
-			...parameters,
+			...getEditableParameters(parameters),
 			totalReach,
 			totalStack
 		};
@@ -108,7 +136,7 @@
 		// Use custom filename if provided, otherwise use default
 		const fileNameToUse = fileName.trim() || 'bike-parameters';
 		// Include bike index in filename for multiple bikes
-		link.download = `${fileNameToUse}-bike${bikeIndex + 1}.json`;
+		link.download = `${fileNameToUse}.json`;
 
 		document.body.appendChild(link);
 		link.click();
@@ -143,33 +171,6 @@
 						bind:value={parameters.headTubeAngle}
 						on:change={handleChange}
 						min="55"
-						max="80"
-						step="0.5"
-						class="number-input"
-					/>
-				</div>
-			</label>
-		</div>
-		<div class="form-group">
-			<label for="seatTubeAngle-{bikeIndex}">
-				Seat Tube Angle (°):
-				<div class="input-group">
-					<input
-						type="range"
-						id="seatTubeAngleSlider-{bikeIndex}"
-						bind:value={parameters.seatTubeAngle}
-						on:input={handleChange}
-						min="65"
-						max="80"
-						step="0.5"
-						class="slider"
-					/>
-					<input
-						type="number"
-						id="seatTubeAngle-{bikeIndex}"
-						bind:value={parameters.seatTubeAngle}
-						on:change={handleChange}
-						min="65"
 						max="80"
 						step="0.5"
 						class="number-input"
